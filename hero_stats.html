@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>U.A. Academy - Hero Progress Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Bangers / Inter / Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            uaNavy: '#0f1d38',
+            uaNavyDark: '#09101f',
+            uaGold: '#ffb703',
+            uaRed: '#e63946',
+            uaCyan: '#00f5d4',
+            uaGreen: '#06d6a0',
+            uaOrange: '#fb8500',
+          },
+          fontFamily: {
+            comic: ['Bangers', 'cursive'],
+            hero: ['Montserrat', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Manga halftone pattern background */
+    body {
+      background-color: #0b1325;
+      background-image: radial-gradient(#1c2d54 1.5px, transparent 1.5px);
+      background-size: 20px 20px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    /* Comic border & dynamic skew effects */
+    .comic-card {
+      border: 3px solid #000;
+      box-shadow: 6px 6px 0px #000;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    
+    .comic-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 8px 8px 0px #000;
+    }
+
+    .comic-btn {
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0px #000;
+      font-family: 'Bangers', cursive;
+      letter-spacing: 1px;
+      transition: all 0.1s ease;
+    }
+
+    .comic-btn:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0px #000;
+    }
+
+    .badge-skew {
+      transform: skewX(-8deg);
+    }
+    .unskew {
+      transform: skewX(8deg);
+    }
+
+    /* Sound burst comic splash */
+    @keyframes popIn {
+      0% { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+      70% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .animate-pop {
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1d38;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ffb703;
+      border: 2px solid #000;
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen pb-16">
+
+  <header class="bg-uaNavy border-b-4 border-black shadow-lg sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="bg-uaGold text-black px-3 py-1 font-comic text-2xl border-2 border-black rounded shadow-[2px_2px_0px_#000] badge-skew">
+          <span class="unskew block">U.A. HIGH</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-black italic tracking-wider text-white uppercase drop-shadow-[2px_2px_0px_#000]">
+          HERO STATUS <span class="text-uaGold">OS</span>
+        </h1>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <!-- Streak Display -->
+        <div class="flex items-center gap-2 bg-black/40 border-2 border-black px-3 py-1.5 rounded-lg">
+          <span class="text-xl">🔥</span>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-gray-400 leading-none">Racha</div>
+            <div class="font-comic text-lg text-uaOrange leading-none" id="streak-counter">0 Días</div>
+          </div>
+        </div>
+
+        <!-- Reset Data Button with custom modal -->
+        <button id="btn-open-settings" class="comic-btn bg-gray-800 hover:bg-gray-700 text-xs px-3 py-2 text-white rounded">
+          ⚙️ AJUSTES
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <section class="lg:col-span-4 flex flex-col gap-6">
+      
+      <!-- HERO ID CARD -->
+      <div class="comic-card bg-gradient-to-br from-uaNavy to-uaNavyDark p-5 rounded-2xl relative overflow-hidden border-4 border-black">
+        <!-- Background Halftone Accent -->
+        <div class="absolute -right-12 -top-12 w-36 h-36 bg-uaGold/10 rounded-full blur-xl pointer-events-none"></div>
+
+        <div class="flex justify-between items-start mb-4">
+          <span class="bg-uaRed text-white text-xs font-black uppercase px-2.5 py-1 rounded border-2 border-black tracking-wider badge-skew">
+            <span class="unskew block">LICENCIA PROVISIONAL</span>
+          </span>
+          <span id="hero-rank" class="text-xs font-black bg-black/60 px-2 py-1 rounded text-uaCyan border border-cyan-500/40">
+            CLASE 1-A (RANGO E)
+          </span>
+        </div>
+
+        <!-- Hero Avatar & Name -->
+        <div class="flex items-center gap-4 mb-4">
+          <div class="relative">
+            <div class="w-20 h-20 bg-uaGold border-3 border-black rounded-2xl flex items-center justify-center text-4xl shadow-[3px_3px_0px_#000] overflow-hidden select-none">
+              <span id="hero-avatar">⚡</span>
+            </div>
+            <button id="btn-cycle-avatar" title="Cambiar Emblema" class="absolute -bottom-1 -right-1 bg-black text-uaGold border border-uaGold p-1 rounded-full text-xs hover:scale-110 transition">
+              ✏️
+            </button>
+          </div>
+          <div class="flex-1">
+            <input type="text" id="hero-name-input" value="Aspirante Deku" 
+              class="w-full bg-black/40 font-comic text-2xl text-uaGold tracking-wide border-b-2 border-dashed border-uaGold/50 focus:border-uaGold outline-none px-1 py-0.5 rounded"
+              title="Haz clic para editar tu nombre de héroe" />
+            <input type="text" id="hero-quirk-input" value="Don: One For All" 
+              class="w-full bg-transparent text-xs text-gray-300 italic tracking-wider font-semibold border-b border-transparent focus:border-gray-500 outline-none px-1 mt-1"
+              title="Haz clic para editar tu Don" />
+          </div>
+        </div>
+
+        <!-- Level & EXP progress -->
+        <div class="bg-black/60 p-3 rounded-xl border-2 border-black mb-4">
+          <div class="flex justify-between items-baseline mb-1">
+            <span class="font-comic text-xl text-uaGold tracking-wider">NIVEL <span id="hero-level">1</span></span>
+            <span class="text-xs font-mono font-bold text-gray-300" id="hero-exp-label">0 / 100 EXP</span>
+          </div>
+          <div class="w-full bg-gray-800 h-4 rounded-full overflow-hidden border border-black p-0.5">
+            <div id="hero-exp-bar" class="h-full bg-gradient-to-r from-uaGold to-uaOrange rounded-full transition-all duration-300" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Motivation Quote / Plus Ultra Banner -->
+        <div class="bg-uaNavyDark border-2 border-black p-3 rounded-xl text-center relative">
+          <p class="font-comic text-sm text-uaCyan tracking-wider">
+            "¡UN HÉROE SIEMPRE DEBE SUPERAR SUS LÍMITES! ¡PLUS ULTRA!"
+          </p>
+        </div>
+      </div>
+
+      <div class="comic-card bg-uaNavy p-5 rounded-2xl border-4 border-black">
+        <div class="flex items-center justify-between mb-3 border-b-2 border-black pb-2">
+          <h2 class="font-comic text-2xl tracking-wide text-uaGold flex items-center gap-2">
+            <span>📊</span> ULTRA ANÁLISIS
+          </h2>
+          <span class="text-[11px] font-bold text-gray-400 bg-black/40 px-2 py-0.5 rounded">RANGOS U.A.</span>
+        </div>
+
+        <!-- Canvas Radar Chart -->
+        <div class="flex justify-center my-2">
+          <canvas id="radarChart" width="260" height="240" class="max-w-full drop-shadow-md"></canvas>
+        </div>
+
+        <!-- Individual Stat Bars with Tier Letter -->
+        <div class="space-y-3 mt-3">
+          <!-- INT -->
+          <div>
+            <div class="flex justify-between items-center text-xs font-bold mb-1">
+              <span class="text-cyan-400 flex items-center gap-1.5">🧠 INTELECTO (INT)</span>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-300 font-mono" id="stat-val-int">15 pts</span>
+                <span class="px-1.5 py-0.2 bg-cyan-900/60 border border-cyan-500 text-cyan-200 font-comic rounded text-xs" id="stat-grade-int">E</span>
+              </div>
+            </div>
+            <div class="w-full bg-black/60 h-2.5 rounded-full overflow-hidden border border-black">
+              <div id="stat-bar-int" class="h-full bg-cyan-400 rounded-full transition-all duration-300" style="width: 15%;"></div>
+            </div>
+          </div>
+
+          <!-- STR (Fuerza) -->
+          <div>
+            <div class="flex justify-between items-center text-xs font-bold mb-1">
+              <span class="text-red-400 flex items-center gap-1.5">💥 FUERZA (STR)</span>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-300 font-mono" id="stat-val-str">15 pts</span>
+                <span class="px-1.5 py-0.2 bg-red-900/60 border border-red-500 text-red-200 font-comic rounded text-xs" id="stat-grade-str">E</span>
+              </div>
+            </div>
+            <div class="w-full bg-black/60 h-2.5 rounded-full overflow-hidden border border-black">
+              <div id="stat-bar-str" class="h-full bg-red-500 rounded-full transition-all duration-300" style="width: 15%;"></div>
+            </div>
+          </div>
+
+          <!-- STA (Resistencia) -->
+          <div>
+            <div class="flex justify-between items-center text-xs font-bold mb-1">
+              <span class="text-green-400 flex items-center gap-1.5">🏃 RESISTENCIA (STA)</span>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-300 font-mono" id="stat-val-sta">15 pts</span>
+                <span class="px-1.5 py-0.2 bg-green-900/60 border border-green-500 text-green-200 font-comic rounded text-xs" id="stat-grade-sta">E</span>
+              </div>
+            </div>
+            <div class="w-full bg-black/60 h-2.5 rounded-full overflow-hidden border border-black">
+              <div id="stat-bar-sta" class="h-full bg-green-400 rounded-full transition-all duration-300" style="width: 15%;"></div>
+            </div>
+          </div>
+
+          <!-- WIL (Disciplina) -->
+          <div>
+            <div class="flex justify-between items-center text-xs font-bold mb-1">
+              <span class="text-amber-400 flex items-center gap-1.5">🛡️ DISCIPLINA (WIL)</span>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-300 font-mono" id="stat-val-wil">15 pts</span>
+                <span class="px-1.5 py-0.2 bg-amber-900/60 border border-amber-500 text-amber-200 font-comic rounded text-xs" id="stat-grade-wil">E</span>
+              </div>
+            </div>
+            <div class="w-full bg-black/60 h-2.5 rounded-full overflow-hidden border border-black">
+              <div id="stat-bar-wil" class="h-full bg-amber-400 rounded-full transition-all duration-300" style="width: 15%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lg:col-span-8 flex flex-col gap-6">
+
+      <!-- TENNIS SCHEDULE BANNER & QUICK ACTIONS -->
+      <div class="comic-card bg-gradient-to-r from-uaNavy via-[#16274e] to-uaNavy p-4 sm:p-5 rounded-2xl border-4 border-black flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4 w-full sm:w-auto">
+          <div class="w-14 h-14 bg-yellow-400 border-3 border-black rounded-2xl flex items-center justify-center text-3xl shadow-[3px_3px_0px_#000] shrink-0">
+            🎾
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-comic text-xl text-uaGold">CALENDARIO DE TENIS U.A.</h3>
+              <span id="tennis-today-badge" class="text-[11px] font-black px-2 py-0.5 rounded border border-black badge-skew">
+                <!-- Injected dynamically -->
+              </span>
+            </div>
+            <p class="text-xs text-gray-300 mt-0.5">
+              Entrenamientos oficiales en pista los <strong class="text-uaGold">Martes</strong> y <strong class="text-uaGold">Jueves</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-2 w-full sm:w-auto">
+          <div class="flex-1 sm:flex-initial text-center bg-black/50 border border-white/10 px-3 py-1.5 rounded-xl">
+            <span class="text-[10px] text-gray-400 block font-bold">MARTES</span>
+            <span class="font-comic text-xs text-yellow-300">Técnica & Pista</span>
+          </div>
+          <div class="flex-1 sm:flex-initial text-center bg-black/50 border border-white/10 px-3 py-1.5 rounded-xl">
+            <span class="text-[10px] text-gray-400 block font-bold">JUEVES</span>
+            <span class="font-comic text-xs text-yellow-300">Partido & Saque</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTION LOG & POMODORO TRAINING -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Action Quick-Log Modal Opener Card -->
+        <div class="comic-card bg-uaNavy p-5 rounded-2xl border-4 border-black flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-comic text-xl text-uaGold">⚡ REGISTRO EXPRÉS</h3>
+              <span class="text-xs bg-uaOrange/20 text-uaOrange font-bold px-2 py-0.5 rounded border border-uaOrange/40">+EXP DIRECTO</span>
+            </div>
+            <p class="text-xs text-gray-300 mb-3">
+              Suma puntos al instante cuando completes tus sesiones o hábitos que sueles olvidar.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-quick-guitar" class="comic-btn bg-purple-600 hover:bg-purple-500 text-white py-2 px-1.5 rounded-xl flex items-center justify-center gap-1 text-[11px] sm:text-xs font-bold">
+              <span>🎸</span> +15 GUITARRA
+            </button>
+            <button id="btn-quick-reading" class="comic-btn bg-blue-600 hover:bg-blue-500 text-white py-2 px-1.5 rounded-xl flex items-center justify-center gap-1 text-[11px] sm:text-xs font-bold">
+              <span>📖</span> +15 LEER
+            </button>
+          </div>
+        </div>
+
+        <!-- U.A. Focus Hero Timer (Pomodoro) -->
+        <div class="comic-card bg-gradient-to-br from-[#132244] to-uaNavy p-5 rounded-2xl border-4 border-black flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-comic text-xl text-uaCyan">⏱️ TEMPORIZADOR U.A.</h3>
+            <span id="timer-mode-tag" class="text-xs bg-cyan-900/60 text-cyan-300 border border-cyan-400 font-bold px-2 py-0.5 rounded">
+              ENFOQUE ESTUDIO
+            </span>
+          </div>
+
+          <div class="text-center py-1">
+            <div id="timer-display" class="font-comic text-4xl sm:text-5xl text-white tracking-widest drop-shadow-[2px_2px_0px_#000]">
+              25:00
+            </div>
+            <div class="text-[11px] text-gray-400 font-medium">Recompensa: <span class="text-uaGold font-bold">+25 EXP & +15 INT</span></div>
+          </div>
+
+          <div class="flex gap-2 mt-3">
+            <button id="timer-toggle-btn" class="comic-btn flex-1 bg-uaGold hover:bg-yellow-400 text-black py-2 rounded-xl text-base">
+              INICIAR
+            </button>
+            <button id="timer-reset-btn" class="comic-btn bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-xl text-sm">
+              🔄
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAILY MISSIONS PANEL -->
+      <div class="comic-card bg-uaNavy p-5 sm:p-6 rounded-2xl border-4 border-black">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 border-b-2 border-black pb-3">
+          <div>
+            <h2 class="font-comic text-2xl sm:text-3xl text-uaGold tracking-wide flex items-center gap-2">
+              <span>🎯</span> MISIONES DE ENTRENAMIENTO
+            </h2>
+            <p class="text-xs text-gray-300">Completa tus hábitos diarios para ganar EXP y fortalecer tus estadísticas.</p>
+          </div>
+
+          <button id="btn-add-mission-modal" class="comic-btn bg-uaGreen hover:bg-emerald-400 text-black px-4 py-1.5 rounded-xl text-sm flex items-center gap-1">
+            <span>➕</span> NUEVA MISIÓN
+          </button>
+        </div>
+
+        <!-- Mission Filter Tabs -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button class="filter-tab-btn active-tab comic-btn bg-uaGold text-black text-xs px-3 py-1 rounded-lg" data-filter="all">TODAS</button>
+          <button class="filter-tab-btn comic-btn bg-gray-800 text-white text-xs px-3 py-1 rounded-lg" data-filter="INT">ESTUDIO</button>
+          <button class="filter-tab-btn comic-btn bg-gray-800 text-white text-xs px-3 py-1 rounded-lg" data-filter="STR">FUERZA (STR)</button>
+          <button class="filter-tab-btn comic-btn bg-gray-800 text-white text-xs px-3 py-1 rounded-lg" data-filter="STA">RESISTENCIA (STA)</button>
+          <button class="filter-tab-btn comic-btn bg-gray-800 text-white text-xs px-3 py-1 rounded-lg" data-filter="WIL">DISCIPLINA</button>
+        </div>
+
+        <!-- Mission List Container -->
+        <div id="missions-list" class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+          <!-- Dynamic tasks will be injected here -->
+        </div>
+
+        <!-- Daily Reset Notice -->
+        <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap justify-between items-center text-xs text-gray-400">
+          <span>💡 Consejo: Las misiones se reinician cada medianoche automáticamente.</span>
+          <button id="btn-manual-reset" class="hover:text-uaGold underline font-semibold transition">
+            Reiniciar casillas hoy
+          </button>
+        </div>
+      </div>
+
+      <!-- HERO BADGES & ACHIEVEMENTS -->
+      <div class="comic-card bg-uaNavy p-5 rounded-2xl border-4 border-black">
+        <h3 class="font-comic text-xl text-uaGold mb-3 flex items-center gap-2">
+          <span>🏅</span> INSIGNIAS DE HÉROE DESBLOQUEADAS
+        </h3>
+        <div id="badges-container" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <!-- Badges injected dynamically -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  
+  <!-- MODAL: ADD CUSTOM MISSION -->
+  <div id="modal-mission" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="comic-card bg-uaNavy border-4 border-black rounded-2xl p-6 w-full max-w-md relative animate-pop">
+      <h3 class="font-comic text-2xl text-uaGold mb-2">➕ CREAR NUEVA MISIÓN</h3>
+      <p class="text-xs text-gray-300 mb-4">Define una tarea que te acerque a convertirte en el Héroe Número 1.</p>
+
+      <form id="form-new-mission" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-300 uppercase mb-1">Título de la misión</label>
+          <input type="text" id="mission-title" required placeholder="Ej: Trote 30 min / 50 Saques de Tenis / Repasar Historia"
+            class="w-full bg-black/60 border-2 border-black rounded-xl p-2.5 text-sm text-white focus:border-uaGold outline-none" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 uppercase mb-1">Estadística</label>
+            <select id="mission-stat" class="w-full bg-black/60 border-2 border-black rounded-xl p-2.5 text-sm text-white focus:border-uaGold outline-none">
+              <option value="INT">🧠 Intelecto / Estudio / Libros (INT)</option>
+              <option value="STR">💥 Fuerza / Tenis / Ejercicio (STR)</option>
+              <option value="STA">🏃 Resistencia / Trote continuo (STA)</option>
+              <option value="WIL">🛡️ Disciplina / Hábitos mañaneros (WIL)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 uppercase mb-1">EXP al completar</label>
+            <input type="number" id="mission-exp" value="20" min="5" max="100"
+              class="w-full bg-black/60 border-2 border-black rounded-xl p-2.5 text-sm text-white focus:border-uaGold outline-none" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="btn-cancel-mission" class="comic-btn bg-gray-700 text-white px-4 py-2 rounded-xl text-sm">CANCELAR</button>
+          <button type="submit" class="comic-btn bg-uaGold hover:bg-yellow-400 text-black px-5 py-2 rounded-xl text-sm font-bold">GUARDAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: LEVEL UP SPLASH -->
+  <div id="modal-levelup" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="comic-card bg-gradient-to-b from-uaNavy to-uaNavyDark border-4 border-uaGold rounded-3xl p-8 max-w-sm w-full text-center relative animate-pop shadow-[0_0_30px_rgba(255,183,3,0.5)]">
+      <div class="text-6xl mb-2 animate-bounce">⚡</div>
+      <div class="font-comic text-4xl text-uaGold tracking-widest leading-none mb-1">¡PLUS ULTRA!</div>
+      <div class="font-comic text-2xl text-uaCyan mb-3">¡HAS SUBIDO DE NIVEL!</div>
+      
+      <p class="text-sm text-gray-200 mb-6">
+        ¡Tu entrenamiento riguroso está dando frutos! Ahora eres <strong class="text-uaGold" id="modal-levelup-rank">Nivel 2</strong>.
+      </p>
+
+      <button id="btn-close-levelup" class="comic-btn bg-uaGold hover:bg-yellow-400 text-black text-xl px-8 py-3 rounded-2xl w-full">
+        ¡CONTINUAR!
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: SETTINGS & RESET CONFIRMATION -->
+  <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="comic-card bg-uaNavy border-4 border-black rounded-2xl p-6 w-full max-w-md relative animate-pop">
+      <h3 class="font-comic text-2xl text-uaGold mb-2">⚙️ CONFIGURACIÓN DE EXPEDIENTE</h3>
+      <p class="text-xs text-gray-300 mb-4">Gestiona los datos de tu licencia de héroe.</p>
+
+      <div class="space-y-4 text-sm">
+        <div class="p-3 bg-black/40 rounded-xl border border-white/10 flex justify-between items-center">
+          <div>
+            <div class="font-bold text-white">Efectos de sonido</div>
+            <div class="text-xs text-gray-400">Audio sintetizado de cómic / 8-bit</div>
+          </div>
+          <button id="toggle-sound-btn" class="comic-btn bg-uaGreen text-black px-3 py-1 rounded text-xs">ACTIVADO</button>
+        </div>
+
+        <div class="p-3 bg-red-900/30 rounded-xl border border-red-500/40">
+          <div class="font-bold text-red-300 mb-1">Reiniciar progreso completo</div>
+          <p class="text-xs text-gray-300 mb-3">Restablece tu nivel, estadísticas y racha al valor inicial de aspirante.</p>
+          <button id="btn-hard-reset" class="comic-btn bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded text-xs">
+            REINICIAR TODOS LOS DATOS
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-5">
+        <button id="btn-close-settings" class="comic-btn bg-gray-700 text-white px-4 py-1.5 rounded-xl text-sm">CERRAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+       AUDIO SYNTHESIS SYSTEM (Web Audio API - No external files)
+       ========================================================= */
+    class HeroAudio {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+      }
+
+      playCheck() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+
+      playLevelUp() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // C-E-G-C-E-G chord
+
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const startTime = now + idx * 0.08;
+
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(freq, startTime);
+
+          gain.gain.setValueAtTime(0.15, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.25);
+        });
+      }
+
+      playQuickPoint() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      }
+    }
+
+    const heroAudio = new HeroAudio();
+
+    /* =========================================================
+       DEFAULT STATE & LOCAL STORAGE
+       ========================================================= */
+    const STORAGE_KEY = 'UA_HERO_SYSTEM_DATA_V2';
+
+    const DEFAULT_MISSIONS = [
+      { id: 'm1', title: 'Trote continuo de 25-30 minutos al trote', stat: 'STA', exp: 35, completed: false },
+      { id: 'm2', title: 'Entrenamiento en pista de Tenis (Martes y Jueves)', stat: 'STR', exp: 35, completed: false },
+      { id: 'm3', title: 'Levantarse en cuanto suena la alarma (sin posponerla)', stat: 'WIL', exp: 15, completed: false },
+      { id: 'm4', title: 'Hacer la cama y dejar la habitación recogida', stat: 'WIL', exp: 15, completed: false },
+      { id: 'm5', title: 'Sesión de Estudio Concentrado (Temporizador U.A.)', stat: 'INT', exp: 30, completed: false },
+      { id: 'm6', title: 'Tocar y practicar con la guitarra (acordes / temas)', stat: 'WIL', exp: 20, completed: false },
+      { id: 'm7', title: 'Lectura de un libro (mínimo 15-20 minutos)', stat: 'INT', exp: 20, completed: false }
+    ];
+
+    const HERO_AVATARS = ['⚡', '🎾', '🏃', '🎸', '📖', '💥', '🔥', '🛡️'];
+
+    const ALL_BADGES = [
+      { id: 'b_first', title: 'Primer Paso Heroico', desc: 'Completa tu primera misión', icon: '🎖️', unlocked: false },
+      { id: 'b_lvl5', title: 'Licencia Provisional', desc: 'Alcanza el Nivel 5', icon: '📜', unlocked: false },
+      { id: 'b_run50', title: 'Resistencia Deku', desc: 'Alcanza 50 de Resistencia (Trote)', icon: '🏃', unlocked: false },
+      { id: 'b_str50', title: 'Golpe Smash', desc: 'Alcanza 50 de Fuerza', icon: '💥', unlocked: false },
+      { id: 'b_wil50', title: 'Disciplina de Acero', desc: 'Alcanza 50 de Disciplina (Hábitos)', icon: '🛡️', unlocked: false },
+      { id: 'b_focus', title: 'Enfoque Absoluto', desc: 'Completa un bloque de estudio con el temporizador', icon: '⏳', unlocked: false }
+    ];
+
+    let state = {
+      heroName: 'Aspirante Deku',
+      quirkName: 'Don: One For All',
+      avatarIdx: 0,
+      level: 1,
+      currentExp: 0,
+      streak: 1,
+      lastActiveDate: new Date().toDateString(),
+      stats: {
+        INT: 15,
+        STR: 15,
+        STA: 15,
+        WIL: 15
+      },
+      missions: [...DEFAULT_MISSIONS],
+      badges: [...ALL_BADGES],
+      activeFilter: 'all'
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state = { ...state, ...parsed };
+        }
+      } catch (e) {
+        console.warn('Error loading localStorage:', e);
+      }
+      checkDailyReset();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn('Error saving to localStorage:', e);
+      }
+      renderAll();
+    }
+
+    function checkDailyReset() {
+      const today = new Date().toDateString();
+      if (state.lastActiveDate !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (state.lastActiveDate === yesterday.toDateString()) {
+          state.streak += 1;
+        } else {
+          // If missed more than 1 day
+          state.streak = 1;
+        }
+        // Reset mission checkboxes for the new day
+        state.missions.forEach(m => m.completed = false);
+        state.lastActiveDate = today;
+        saveState();
+      }
+    }
+
+    function getExpForNextLevel(lvl) {
+      return 100 + (lvl - 1) * 50;
+    }
+
+    function getGradeLetter(val) {
+      if (val >= 90) return 'S+';
+      if (val >= 75) return 'A';
+      if (val >= 55) return 'B';
+      if (val >= 40) return 'C';
+      if (val >= 25) return 'D';
+      return 'E';
+    }
+
+    function getHeroRankTitle(level) {
+      if (level >= 20) return 'HÉROE N° 1 DE LA U.A. (RANGO S)';
+      if (level >= 15) return 'TOP 10 PRO HERO (RANGO A)';
+      if (level >= 10) return 'LICENCIA DEFINITIVA (RANGO B)';
+      if (level >= 5) return 'LICENCIA PROVISIONAL (RANGO C)';
+      if (level >= 2) return 'ESTUDIANTE CLASE 1-A (RANGO D)';
+      return 'ASPIRANTE SIN DON (RANGO E)';
+    }
+
+    function awardRewards(exp, statType = null, statAmount = 0) {
+      state.currentExp += exp;
+      if (statType && state.stats[statType] !== undefined) {
+        state.stats[statType] += statAmount;
+      }
+
+      showToast(`+${exp} EXP ${statType ? `| +${statAmount} ${statType}` : ''}`, 'gold');
+
+      let expNeeded = getExpForNextLevel(state.level);
+      let leveledUp = false;
+
+      while (state.currentExp >= expNeeded) {
+        state.currentExp -= expNeeded;
+        state.level += 1;
+        leveledUp = true;
+        expNeeded = getExpForNextLevel(state.level);
+      }
+
+      checkBadges();
+
+      if (leveledUp) {
+        heroAudio.playLevelUp();
+        document.getElementById('modal-levelup-rank').innerText = `Nivel ${state.level} - ${getHeroRankTitle(state.level)}`;
+        document.getElementById('modal-levelup').classList.remove('hidden');
+      }
+
+      saveState();
+    }
+
+    function checkBadges() {
+      let newlyUnlocked = false;
+
+      state.badges.forEach(b => {
+        if (!b.unlocked) {
+          if (b.id === 'b_first' && state.missions.some(m => m.completed)) {
+            b.unlocked = true;
+            newlyUnlocked = true;
+          }
+          if (b.id === 'b_lvl5' && state.level >= 5) {
+            b.unlocked = true;
+            newlyUnlocked = true;
+          }
+          if (b.id === 'b_run50' && state.stats.STA >= 50) {
+            b.unlocked = true;
+            newlyUnlocked = true;
+          }
+          if (b.id === 'b_str50' && state.stats.STR >= 50) {
+            b.unlocked = true;
+            newlyUnlocked = true;
+          }
+          if (b.id === 'b_wil50' && state.stats.WIL >= 50) {
+            b.unlocked = true;
+            newlyUnlocked = true;
+          }
+        }
+      });
+
+      if (newlyUnlocked) {
+        showToast('¡Nueva Insignia de Héroe Desbloqueada!', 'cyan');
+      }
+    }
+
+    function drawRadarChart() {
+      const canvas = document.getElementById('radarChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const cX = w / 2;
+      const cY = h / 2;
+      const radius = 80;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const labels = ['INTELECTO', 'FUERZA', 'RESISTENCIA', 'DISCIPLINA'];
+      const keys = ['INT', 'STR', 'STA', 'WIL'];
+      const totalPoints = 4;
+      const angleStep = (Math.PI * 2) / totalPoints;
+
+      // Draw background polygons (grid rings)
+      const rings = 4;
+      for (let r = 1; r <= rings; r++) {
+        ctx.beginPath();
+        const currentRadius = (radius / rings) * r;
+        for (let i = 0; i < totalPoints; i++) {
+          const angle = i * angleStep - Math.PI / 2;
+          const x = cX + currentRadius * Math.cos(angle);
+          const y = cY + currentRadius * Math.sin(angle);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = r === rings ? '#3a4d7c' : '#1e2c4d';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // Draw axis lines
+      for (let i = 0; i < totalPoints; i++) {
+        const angle = i * angleStep - Math.PI / 2;
+        const x = cX + radius * Math.cos(angle);
+        const y = cY + radius * Math.sin(angle);
+        ctx.beginPath();
+        ctx.moveTo(cX, cY);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#273861';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Draw Labels
+        const labelDistance = radius + 22;
+        const lx = cX + labelDistance * Math.cos(angle);
+        const ly = cY + labelDistance * Math.sin(angle);
+        ctx.font = 'bold 9px Montserrat, sans-serif';
+        ctx.fillStyle = '#00f5d4';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labels[i], lx, ly);
+      }
+
+      // Calculate Stat Polygon
+      const maxStat = 100;
+      ctx.beginPath();
+      keys.forEach((k, i) => {
+        const val = Math.min(Math.max(state.stats[k] || 10, 5), maxStat);
+        const ratio = val / maxStat;
+        const dist = ratio * radius;
+        const angle = i * angleStep - Math.PI / 2;
+        const x = cX + dist * Math.cos(angle);
+        const y = cY + dist * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+
+      // Fill stat polygon
+      ctx.fillStyle = 'rgba(255, 183, 3, 0.45)';
+      ctx.fill();
+      ctx.strokeStyle = '#ffb703';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Draw glowing vertex points
+      keys.forEach((k, i) => {
+        const val = Math.min(Math.max(state.stats[k] || 10, 5), maxStat);
+        const ratio = val / maxStat;
+        const dist = ratio * radius;
+        const angle = i * angleStep - Math.PI / 2;
+        const x = cX + dist * Math.cos(angle);
+        const y = cY + dist * Math.sin(angle);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+    }
+
+    function updateTennisBadge() {
+      const badge = document.getElementById('tennis-today-badge');
+      if (!badge) return;
+      const day = new Date().getDay(); // 0 = Sun, 2 = Tue, 4 = Thu
+      if (day === 2) {
+        badge.className = 'text-[11px] font-black px-2.5 py-0.5 rounded border border-black bg-uaGreen text-black badge-skew animate-pulse';
+        badge.innerHTML = '<span class="unskew block">🔥 ¡HOY TOCA PISTA! (MARTES)</span>';
+      } else if (day === 4) {
+        badge.className = 'text-[11px] font-black px-2.5 py-0.5 rounded border border-black bg-uaGreen text-black badge-skew animate-pulse';
+        badge.innerHTML = '<span class="unskew block">🔥 ¡HOY TOCA PARTIDO! (JUEVES)</span>';
+      } else {
+        badge.className = 'text-[11px] font-black px-2.5 py-0.5 rounded border border-black bg-black/60 text-gray-300 badge-skew';
+        badge.innerHTML = '<span class="unskew block">🎾 DESCANSO / TROTE</span>';
+      }
+    }
+
+    function renderAll() {
+      // 1. Header & ID Card
+      document.getElementById('hero-name-input').value = state.heroName;
+      document.getElementById('hero-quirk-input').value = state.quirkName;
+      document.getElementById('hero-avatar').innerText = HERO_AVATARS[state.avatarIdx % HERO_AVATARS.length];
+      document.getElementById('hero-rank').innerText = getHeroRankTitle(state.level);
+      document.getElementById('hero-level').innerText = state.level;
+      document.getElementById('streak-counter').innerText = `${state.streak} Días`;
+
+      const expNeeded = getExpForNextLevel(state.level);
+      const expPct = Math.min(100, Math.round((state.currentExp / expNeeded) * 100));
+      document.getElementById('hero-exp-bar').style.width = `${expPct}%`;
+      document.getElementById('hero-exp-label').innerText = `${state.currentExp} / ${expNeeded} EXP`;
+
+      // 2. Stat Bars & Labels
+      const statKeys = ['int', 'str', 'sta', 'wil'];
+      statKeys.forEach(k => {
+        const upper = k.toUpperCase();
+        const val = state.stats[upper] || 0;
+        const elVal = document.getElementById(`stat-val-${k}`);
+        const elGrade = document.getElementById(`stat-grade-${k}`);
+        const elBar = document.getElementById(`stat-bar-${k}`);
+
+        if (elVal) elVal.innerText = `${val} pts`;
+        if (elGrade) elGrade.innerText = getGradeLetter(val);
+        if (elBar) elBar.style.width = `${Math.min(100, (val / 100) * 100)}%`;
+      });
+
+      // 3. Tennis Schedule Status
+      updateTennisBadge();
+
+      // 4. Radar Chart
+      drawRadarChart();
+
+      // 5. Missions List
+      renderMissions();
+
+      // 6. Badges
+      renderBadges();
+    }
+
+    function renderMissions() {
+      const listEl = document.getElementById('missions-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+
+      const filtered = state.missions.filter(m => {
+        if (state.activeFilter === 'all') return true;
+        return m.stat === state.activeFilter;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-8 text-gray-400 font-semibold text-sm">
+            No hay misiones en esta categoría. ¡Añade una con el botón de arriba!
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(m => {
+        const item = document.createElement('div');
+        item.className = `p-3.5 rounded-xl border-2 border-black flex items-center justify-between gap-3 transition-all ${
+          m.completed ? 'bg-black/40 opacity-70 line-through' : 'bg-uaNavyDark hover:bg-[#152342]'
+        }`;
+
+        let statColor = 'text-cyan-400 border-cyan-500/40 bg-cyan-900/30';
+        if (m.stat === 'STR') statColor = 'text-red-400 border-red-500/40 bg-red-900/30';
+        if (m.stat === 'STA') statColor = 'text-green-400 border-green-500/40 bg-green-900/30';
+        if (m.stat === 'WIL') statColor = 'text-amber-400 border-amber-500/40 bg-amber-900/30';
+
+        item.innerHTML = `
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <button class="btn-check-mission w-7 h-7 rounded-lg border-2 border-black flex items-center justify-center font-bold text-black transition ${
+              m.completed ? 'bg-uaGreen' : 'bg-gray-700 hover:bg-gray-600'
+            }" data-id="${m.id}">
+              ${m.completed ? '✓' : ''}
+            </button>
+            <div class="flex-1 truncate">
+              <div class="text-sm font-bold text-white truncate ${m.completed ? 'line-through text-gray-400' : ''}">${m.title}</div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded border ${statColor}">${m.stat}</span>
+                <span class="text-[11px] font-mono text-uaGold">+${m.exp} EXP</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn-delete-mission text-gray-500 hover:text-red-400 p-1 text-sm font-bold transition" data-id="${m.id}" title="Eliminar misión">
+            ✕
+          </button>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function renderBadges() {
+      const container = document.getElementById('badges-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      state.badges.forEach(b => {
+        const card = document.createElement('div');
+        card.className = `p-2.5 rounded-xl border-2 border-black text-center transition flex flex-col items-center justify-center ${
+          b.unlocked ? 'bg-uaNavyDark border-uaGold shadow-[2px_2px_0px_#ffb703]' : 'bg-black/30 border-gray-700 opacity-40'
+        }`;
+        card.innerHTML = `
+          <div class="text-2xl mb-1">${b.icon}</div>
+          <div class="text-xs font-bold text-white truncate w-full">${b.title}</div>
+          <div class="text-[10px] text-gray-400 mt-0.5 line-clamp-1">${b.desc}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function showToast(text, color = 'gold') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bg = color === 'cyan' ? 'bg-uaCyan text-black' : 'bg-uaGold text-black';
+
+      toast.className = `comic-card ${bg} font-comic text-base tracking-wide px-4 py-2 rounded-xl flex items-center gap-2 shadow-[4px_4px_0px_#000] animate-pop pointer-events-auto`;
+      toast.innerHTML = `<span>⚡</span> <span>${text}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    let timerInterval = null;
+    let timerSeconds = 25 * 60;
+    let isTimerRunning = false;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTimerDisplay() {
+      const el = document.getElementById('timer-display');
+      if (el) el.innerText = formatTime(timerSeconds);
+    }
+
+    function toggleTimer() {
+      heroAudio.init();
+      const btn = document.getElementById('timer-toggle-btn');
+      if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        btn.innerText = 'CONTINUAR';
+        btn.className = 'comic-btn flex-1 bg-uaGold hover:bg-yellow-400 text-black py-2 rounded-xl text-base';
+      } else {
+        isTimerRunning = true;
+        btn.innerText = 'PAUSAR';
+        btn.className = 'comic-btn flex-1 bg-uaRed hover:bg-red-500 text-white py-2 rounded-xl text-base';
+
+        timerInterval = setInterval(() => {
+          if (timerSeconds > 0) {
+            timerSeconds--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            btn.innerText = 'INICIAR';
+            btn.className = 'comic-btn flex-1 bg-uaGold hover:bg-yellow-400 text-black py-2 rounded-xl text-base';
+            timerSeconds = 25 * 60;
+            updateTimerDisplay();
+
+            // Grant Focus Rewards
+            awardRewards(35, 'INT', 15);
+            awardRewards(0, 'WIL', 10);
+            
+            // Unlock badge
+            const badge = state.badges.find(b => b.id === 'b_focus');
+            if (badge && !badge.unlocked) {
+              badge.unlocked = true;
+              showToast('¡Insignia "Enfoque Absoluto" Desbloqueada!', 'cyan');
+            }
+            saveState();
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      timerSeconds = 25 * 60;
+      updateTimerDisplay();
+      const btn = document.getElementById('timer-toggle-btn');
+      btn.innerText = 'INICIAR';
+      btn.className = 'comic-btn flex-1 bg-uaGold hover:bg-yellow-400 text-black py-2 rounded-xl text-base';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      renderAll();
+
+      // Editable Hero Profile
+      const nameInput = document.getElementById('hero-name-input');
+      const quirkInput = document.getElementById('hero-quirk-input');
+
+      nameInput.addEventListener('change', (e) => {
+        state.heroName = e.target.value.trim() || 'Aspirante Deku';
+        saveState();
+      });
+
+      quirkInput.addEventListener('change', (e) => {
+        state.quirkName = e.target.value.trim() || 'Don: One For All';
+        saveState();
+      });
+
+      // Cycle Avatar Emblem
+      document.getElementById('btn-cycle-avatar').addEventListener('click', () => {
+        heroAudio.playQuickPoint();
+        state.avatarIdx = (state.avatarIdx + 1) % HERO_AVATARS.length;
+        saveState();
+      });
+
+      // Quick log buttons for Guitar, Reading, Run, and Tennis
+      const guitarBtn = document.getElementById('btn-quick-guitar');
+      if (guitarBtn) {
+        guitarBtn.addEventListener('click', () => {
+          heroAudio.playQuickPoint();
+          awardRewards(15, 'WIL', 5);
+        });
+      }
+
+      const readingBtn = document.getElementById('btn-quick-reading');
+      if (readingBtn) {
+        readingBtn.addEventListener('click', () => {
+          heroAudio.playQuickPoint();
+          awardRewards(15, 'INT', 5);
+        });
+      }
+
+      const runBtn = document.getElementById('btn-quick-run');
+      if (runBtn) {
+        runBtn.addEventListener('click', () => {
+          heroAudio.playQuickPoint();
+          awardRewards(20, 'STA', 5);
+        });
+      }
+
+      const tennisBtn = document.getElementById('btn-quick-tennis');
+      if (tennisBtn) {
+        tennisBtn.addEventListener('click', () => {
+          heroAudio.playQuickPoint();
+          awardRewards(25, 'STR', 5);
+        });
+      }
+
+      // Mission check & delete delegation
+      document.getElementById('missions-list').addEventListener('click', (e) => {
+        const checkBtn = e.target.closest('.btn-check-mission');
+        if (checkBtn) {
+          const id = checkBtn.dataset.id;
+          const mission = state.missions.find(m => m.id === id);
+          if (mission) {
+            mission.completed = !mission.completed;
+            if (mission.completed) {
+              heroAudio.playCheck();
+              awardRewards(mission.exp, mission.stat, 5);
+            } else {
+              // Deduct if unchecked
+              state.currentExp = Math.max(0, state.currentExp - mission.exp);
+              if (state.stats[mission.stat]) {
+                state.stats[mission.stat] = Math.max(0, state.stats[mission.stat] - 5);
+              }
+              saveState();
+            }
+          }
+          return;
+        }
+
+        const delBtn = e.target.closest('.btn-delete-mission');
+        if (delBtn) {
+          const id = delBtn.dataset.id;
+          state.missions = state.missions.filter(m => m.id !== id);
+          saveState();
+        }
+      });
+
+      // Filter tabs
+      document.querySelectorAll('.filter-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-tab-btn').forEach(b => {
+            b.classList.remove('bg-uaGold', 'text-black');
+            b.classList.add('bg-gray-800', 'text-white');
+          });
+          btn.classList.add('bg-uaGold', 'text-black');
+          btn.classList.remove('bg-gray-800', 'text-white');
+          state.activeFilter = btn.dataset.filter;
+          renderMissions();
+        });
+      });
+
+      // Manual mission uncheck reset
+      document.getElementById('btn-manual-reset').addEventListener('click', () => {
+        state.missions.forEach(m => m.completed = false);
+        showToast('Misiones diarias reiniciadas', 'cyan');
+        saveState();
+      });
+
+      // Timer Controls
+      document.getElementById('timer-toggle-btn').addEventListener('click', toggleTimer);
+      document.getElementById('timer-reset-btn').addEventListener('click', resetTimer);
+
+      // New Mission Modal handlers
+      const missionModal = document.getElementById('modal-mission');
+      document.getElementById('btn-add-mission-modal').addEventListener('click', () => {
+        missionModal.classList.remove('hidden');
+      });
+
+      document.getElementById('btn-cancel-mission').addEventListener('click', () => {
+        missionModal.classList.add('hidden');
+      });
+
+      document.getElementById('form-new-mission').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('mission-title').value.trim();
+        const stat = document.getElementById('mission-stat').value;
+        const exp = parseInt(document.getElementById('mission-exp').value, 10) || 20;
+
+        if (title) {
+          state.missions.push({
+            id: 'm_' + Date.now(),
+            title,
+            stat,
+            exp,
+            completed: false
+          });
+          document.getElementById('mission-title').value = '';
+          missionModal.classList.add('hidden');
+          heroAudio.playQuickPoint();
+          showToast('¡Nueva misión agregada!');
+          saveState();
+        }
+      });
+
+      // Close level-up modal
+      document.getElementById('btn-close-levelup').addEventListener('click', () => {
+        document.getElementById('modal-levelup').classList.add('hidden');
+      });
+
+      // Settings Modal
+      const settingsModal = document.getElementById('modal-settings');
+      document.getElementById('btn-open-settings').addEventListener('click', () => {
+        settingsModal.classList.remove('hidden');
+      });
+
+      document.getElementById('btn-close-settings').addEventListener('click', () => {
+        settingsModal.classList.add('hidden');
+      });
+
+      const soundBtn = document.getElementById('toggle-sound-btn');
+      soundBtn.addEventListener('click', () => {
+        heroAudio.enabled = !heroAudio.enabled;
+        soundBtn.innerText = heroAudio.enabled ? 'ACTIVADO' : 'SILENCIADO';
+        soundBtn.className = heroAudio.enabled
+          ? 'comic-btn bg-uaGreen text-black px-3 py-1 rounded text-xs'
+          : 'comic-btn bg-gray-600 text-white px-3 py-1 rounded text-xs';
+      });
+
+      // Hard reset button
+      document.getElementById('btn-hard-reset').addEventListener('click', () => {
+        state = {
+          heroName: 'Aspirante Deku',
+          quirkName: 'Don: One For All',
+          avatarIdx: 0,
+          level: 1,
+          currentExp: 0,
+          streak: 1,
+          lastActiveDate: new Date().toDateString(),
+          stats: { INT: 15, STR: 15, STA: 15, WIL: 15 },
+          missions: [...DEFAULT_MISSIONS],
+          badges: [...ALL_BADGES],
+          activeFilter: 'all'
+        };
+        saveState();
+        settingsModal.classList.add('hidden');
+        showToast('Expediente restablecido a cero', 'gold');
+      });
+
+      // Resize listener for radar chart responsiveness
+      window.addEventListener('resize', drawRadarChart);
+    });
+  </script>
+</body>
+</html>
